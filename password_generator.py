@@ -32,27 +32,27 @@ def application_name():
 window = Tk()
 window.title("Générateur de Mot de passe")
 
-window.config(background='#07262A')
+window.config(background='#464646')
 
-frame = Frame(window, bg='#07262A')
+frame = Frame(window, bg='#464646')
 
 width = 612
 height = 512
 image = PhotoImage(file="logoge.png").zoom(20).subsample(32)
-canvas = Canvas(frame, width=width, height=height, bg='#07262A', bd=0, highlightthickness=0)
+canvas = Canvas(frame, width=width, height=height, bg='#464646', bd=0, highlightthickness=0)
 canvas.create_image(width/2, height/2, image=image)
 canvas.grid(row=0, column=0, sticky=W)
 
-right_frame = Frame(frame, bg='#07262A')
+right_frame = Frame(frame, bg='#464646')
 
-bievenue = Label(right_frame, text="Bienvenue !", font=("Arial", 30), bg='#07262A', fg='white')
+bievenue = Label(right_frame, text="Bienvenue !", font=("Arial", 30), bg='#464646', fg='white')
 bievenue.pack()
 
 
-label_title = Label(right_frame, text="Mot de passe", font=("Arial", 20), bg='#07262A', fg='white')
+label_title = Label(right_frame, text="Mot de passe", font=("Arial", 20), bg='#464646', fg='white')
 label_title.pack()
 
-password_entry = Entry(right_frame, font=("Arial", 20), bg='#07262A', fg='white')
+password_entry = Entry(right_frame, font=("Arial", 20), bg='#464646', fg='white')
 password_entry.pack()
 
 generate_password_button = Button(right_frame, text="Générer mon nouveau mot de passe", font=("Arial", 20), bg='#037a8a', fg='white', command=generate_password)
