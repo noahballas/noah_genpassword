@@ -20,4 +20,4 @@ Parfait pour gérer facilement et en toute sécurité les mots de passe de diff�
 Instagram : <Mot de passe généré>
 Snapchat : <Mot de passe généré>
 
-![image](https://github.com/user-attachments/assets/86343a70-10cd-4675-a52e-6c82b5e439fb)
+![image](https://github.com/user-attachments/assets/e3c660cd-18c2-4414-acdd-43bbc9d6492a)
