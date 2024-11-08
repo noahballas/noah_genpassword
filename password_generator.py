@@ -26,7 +26,7 @@ def Noah_generate_password():
         print("Veuillez entrer le nom de l'application.")
 
 window = Tk()
-window.title("Générateur de Mot de Passe")
+window.title("🔑 Générateur de Mot de Passe 🔑")
 window.config(background='#1e1e2f')
 
 frame = Frame(window, bg='#1e1e2f')
