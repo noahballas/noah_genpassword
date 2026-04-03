@@ -1,171 +1,252 @@
 import string
-from random import choice
-from tkinter import *
-from tkinter import ttk
+from random import choice, shuffle
 import tkinter as tk
 from tkinter import messagebox
 
-BG_COLOR = "#2d3748"
-SECONDARY_COLOR = "#4a5568"
-ACCENT_COLOR = "#4299e1"
-TEXT_COLOR = "#f7fafc"
-ENTRY_COLOR = "#1a202c"
-HOVER_COLOR = "#3182ce"
+
+BG = "#0a0a0f"
+SURFACE = "#12121a"
+CARD = "#1a1a28"
+BORDER = "#2a2a3d"
+ACCENT = "#7c3aed"
+ACCENT2 = "#a855f7"
+GLOW = "#c084fc"
+TEXT = "#f0f0ff"
+MUTED = "#6b7280"
+SUCCESS = "#10b981"
+ERROR = "#ef4444"
+WHITE = "#ffffff"
+
 
 def generate_password():
     try:
-        length = int(length_var.get())
-        include_special_chars = special_chars_var.get()
-        include_numbers = numbers_var.get()
-        include_uppercase = uppercase_var.get()
+        length = int(float(length_var.get()))
 
-        all_chars = string.ascii_lowercase
-        if include_uppercase:
-            all_chars += string.ascii_uppercase
-        if include_numbers:
-            all_chars += string.digits
-        if include_special_chars:
-            all_chars += string.punctuation
+        chars = string.ascii_lowercase
+        required = []
 
-        if not all_chars:
-            messagebox.showwarning("Attention", "Veuillez sélectionner au moins un type de caractères")
+        if uppercase_var.get():
+            chars += string.ascii_uppercase
+            required.append(choice(string.ascii_uppercase))
+        if numbers_var.get():
+            chars += string.digits
+            required.append(choice(string.digits))
+        if special_var.get():
+            chars += string.punctuation
+            required.append(choice(string.punctuation))
+
+        if not chars:
+            set_status("Sélectionne au moins un type de caractère", ERROR)
             return
 
-        password = "".join(choice(all_chars) for _ in range(length))
-        
-        password_entry.delete(0, END)
-        password_entry.insert(0, password)
-        password_entry.config(fg=ACCENT_COLOR)
+        remaining = [choice(chars) for _ in range(length - len(required))]
+        all_chars = required + remaining
+        shuffle(all_chars)
+        password = "".join(all_chars)
 
-        app_name = app_name_entry.get().strip()
+        password_var.set(password)
+        password_entry.config(fg=GLOW)
+
+        update_strength(password)
+
+        app_name = app_entry.get().strip()
         if app_name:
             try:
-                with open("mesmotdepasse.txt", "a+", encoding='utf-8') as file:
-                    file.write(f"{app_name} : {password}\n")
-                status_label.config(text="Mot de passe enregistré!", fg="#48bb78")
+                with open("mesmotdepasse.txt", "a", encoding="utf-8") as f:
+                    f.write(f"{app_name} : {password}\n")
+                set_status("✓  Mot de passe sauvegardé", SUCCESS)
             except IOError:
-                status_label.config(text="Erreur d'enregistrement", fg="#e53e3e")
+                set_status("Erreur lors de la sauvegarde", ERROR)
         else:
-            status_label.config(text="Entrez un nom d'application", fg="#e53e3e")
-            
-        generate_button.config(text="✓ Généré!")
-        window.after(1500, lambda: generate_button.config(text="Générer mot de passe"))
-        
+            set_status("⚠  Entre un nom de service pour sauvegarder", GLOW)
+
+        animate_button()
+
     except ValueError:
-        messagebox.showerror("Erreur", "La longueur doit être un nombre valide")
+        set_status("Longueur invalide", ERROR)
 
-def copy_to_clipboard():
+
+def update_strength(pwd):
+    score = 0
+    if len(pwd) >= 12: score += 1
+    if len(pwd) >= 20: score += 1
+    if any(c in string.ascii_uppercase for c in pwd): score += 1
+    if any(c in string.digits for c in pwd): score += 1
+    if any(c in string.punctuation for c in pwd): score += 1
+
+    labels = ["Très faible", "Faible", "Moyen", "Fort", "Très fort", "Extrême"]
+    colors = [ERROR, "#f97316", "#eab308", "#3b82f6", SUCCESS, GLOW]
+
+    strength_label.config(text=labels[score], fg=colors[score])
+
+    for i, bar in enumerate(strength_bars):
+        if i < score:
+            bar.config(bg=colors[score])
+        else:
+            bar.config(bg=BORDER)
+
+
+def copy_password():
+    pwd = password_var.get()
+    if not pwd:
+        set_status("Aucun mot de passe à copier", ERROR)
+        return
     window.clipboard_clear()
-    window.clipboard_append(password_entry.get())
-    status_label.config(text="Copié dans le presse-papier!", fg="#48bb78")
-    window.after(2000, lambda: status_label.config(text="", fg=TEXT_COLOR))
+    window.clipboard_append(pwd)
+    set_status("✓  Copié dans le presse-papier", SUCCESS)
 
-def toggle_advanced():
-    if advanced_frame.winfo_ismapped():
-        advanced_frame.grid_remove()
-        toggle_button.config(text="Options avancées ▼")
-    else:
-        advanced_frame.grid()
-        toggle_button.config(text="Options avancées ▲")
+
+def set_status(msg, color):
+    status_label.config(text=msg, fg=color)
+    window.after(3000, lambda: status_label.config(text=""))
+
+
+def animate_button():
+    gen_btn.config(text="✓  Généré !", bg=SUCCESS)
+    window.after(1500, lambda: gen_btn.config(text="⚡  Générer", bg=ACCENT))
+
+
+def update_length_label(val):
+    v = int(float(val))
+    length_display.config(text=str(v))
+
 
 def on_closing():
-    if messagebox.askokcancel("Quitter", "Voulez-vous vraiment quitter?"):
+    if messagebox.askokcancel("Quitter", "Fermer Gen Password ?"):
         window.destroy()
+
 
 window = tk.Tk()
 window.title("Gen Password")
-window.geometry("800x600")
+window.geometry("720x820")
 window.resizable(False, False)
-window.configure(bg=BG_COLOR)
+window.configure(bg=BG)
 window.protocol("WM_DELETE_WINDOW", on_closing)
 
-style = ttk.Style()
-style.theme_use('clam')
-style.configure('TFrame', background=BG_COLOR)
-style.configure('TLabel', background=BG_COLOR, foreground=TEXT_COLOR)
-style.configure('TButton', background=ACCENT_COLOR, foreground=TEXT_COLOR, 
-                font=('Helvetica', 12, 'bold'), borderwidth=0)
-style.map('TButton', background=[('active', HOVER_COLOR), ('pressed', HOVER_COLOR)])
+try:
+    window.tk.call("tk", "scaling", 1.2)
+except Exception:
+    pass
 
-header_frame = ttk.Frame(window, style='TFrame')
-header_frame.pack(pady=(20, 10))
 
-title_label = ttk.Label(header_frame, text="Gen Password", font=('Helvetica', 28, 'bold'), 
-                       foreground=ACCENT_COLOR, background=BG_COLOR)
-title_label.pack()
+outer = tk.Frame(window, bg=BG)
+outer.pack(fill="both", expand=True, padx=40, pady=32)
 
-subtitle_label = ttk.Label(header_frame, text="Générateur de mots de passe sécurisés", 
-                          font=('Helvetica', 12), foreground=TEXT_COLOR)
-subtitle_label.pack(pady=(5, 0))
 
-main_frame = ttk.Frame(window, style='TFrame')
-main_frame.pack(pady=20, padx=40, fill='both', expand=True)
+header = tk.Frame(outer, bg=BG)
+header.pack(fill="x", pady=(0, 20))
 
-app_name_label = ttk.Label(main_frame, text="Pour quel service?", font=('Helvetica', 12))
-app_name_label.grid(row=0, column=0, sticky='w', pady=(0, 5))
+tk.Label(header, text="GEN", font=("Courier", 42, "bold"), bg=BG, fg=WHITE).pack(side="left")
+tk.Label(header, text="PASSWORD", font=("Courier", 42, "bold"), bg=BG, fg=ACCENT2).pack(side="left")
 
-app_name_entry = ttk.Entry(main_frame, font=('Helvetica', 12), width=30)
-app_name_entry.grid(row=1, column=0, columnspan=2, pady=(0, 15), sticky='ew')
+tk.Label(header, text="par Noah  •  22/06/22", font=("Courier", 9),
+         bg=BG, fg=MUTED).pack(side="right", anchor="s", pady=(16, 0))
 
-length_label = ttk.Label(main_frame, text="Longueur du mot de passe", font=('Helvetica', 12))
-length_label.grid(row=2, column=0, sticky='w', pady=(10, 5))
+
+def card(parent, pady=(0, 16)):
+    f = tk.Frame(parent, bg=CARD, highlightbackground=BORDER, highlightthickness=1)
+    f.pack(fill="x", pady=pady)
+    inner = tk.Frame(f, bg=CARD)
+    inner.pack(fill="x", padx=16, pady=14)
+    return inner
+
+
+c1 = card(outer)
+tk.Label(c1, text="SERVICE", font=("Courier", 9, "bold"), bg=CARD, fg=MUTED).pack(anchor="w")
+app_entry = tk.Entry(c1, font=("Courier", 14), bg=SURFACE, fg=TEXT,
+                     insertbackground=ACCENT2, relief="flat", bd=0)
+app_entry.pack(fill="x", pady=(6, 0), ipady=6)
+app_entry.insert(0, "ex: GitHub, Gmail…")
+app_entry.bind("<FocusIn>", lambda e: app_entry.delete(0, "end") if app_entry.get().startswith("ex:") else None)
+
+
+c2 = card(outer)
+top = tk.Frame(c2, bg=CARD)
+top.pack(fill="x")
+tk.Label(top, text="LONGUEUR", font=("Courier", 9, "bold"), bg=CARD, fg=MUTED).pack(side="left")
+length_display = tk.Label(top, text="16", font=("Courier", 13, "bold"), bg=CARD, fg=ACCENT2)
+length_display.pack(side="right")
 
 length_var = tk.StringVar(value="16")
-length_scale = ttk.Scale(main_frame, from_=8, to=32, variable=length_var, 
-                        command=lambda v: length_value.config(text=f"{int(float(v))}"))
-length_scale.grid(row=3, column=0, sticky='ew', pady=(0, 5))
+slider = tk.Scale(c2, from_=6, to=48, orient="horizontal", variable=length_var,
+                  command=update_length_label, showvalue=False,
+                  bg=CARD, troughcolor=BORDER, activebackground=ACCENT,
+                  highlightthickness=0, sliderrelief="flat",
+                  fg=TEXT, bd=0, sliderlength=18)
+slider.pack(fill="x", pady=(8, 0))
 
-length_value = ttk.Label(main_frame, text="16", font=('Helvetica', 12), width=3)
-length_value.grid(row=3, column=1, sticky='w', padx=(10, 0))
 
-toggle_button = ttk.Button(main_frame, text="Options avancées ▼", 
-                          command=toggle_advanced, style='TButton')
-toggle_button.grid(row=4, column=0, pady=(20, 5), sticky='w')
+c3 = card(outer)
+tk.Label(c3, text="COMPOSITION", font=("Courier", 9, "bold"), bg=CARD, fg=MUTED).pack(anchor="w", pady=(0, 8))
 
-advanced_frame = ttk.Frame(main_frame, style='TFrame')
-
-special_chars_var = tk.BooleanVar(value=True)
-special_chars_check = ttk.Checkbutton(advanced_frame, text="Caractères spéciaux (!@#...)", 
-                                    variable=special_chars_var)
-special_chars_check.grid(row=0, column=0, sticky='w', pady=2)
-
+special_var = tk.BooleanVar(value=True)
 numbers_var = tk.BooleanVar(value=True)
-numbers_check = ttk.Checkbutton(advanced_frame, text="Chiffres (0-9)", 
-                               variable=numbers_var)
-numbers_check.grid(row=1, column=0, sticky='w', pady=2)
-
 uppercase_var = tk.BooleanVar(value=True)
-uppercase_check = ttk.Checkbutton(advanced_frame, text="Lettres majuscules (A-Z)", 
-                                variable=uppercase_var)
-uppercase_check.grid(row=2, column=0, sticky='w', pady=2)
 
-advanced_frame.grid(row=5, column=0, columnspan=2, pady=(0, 20), sticky='ew')
-advanced_frame.grid_remove()
+def styled_check(parent, text, var):
+    f = tk.Frame(parent, bg=CARD)
+    f.pack(fill="x", pady=3)
+    cb = tk.Checkbutton(f, text=text, variable=var,
+                        font=("Courier", 11), bg=CARD, fg=TEXT,
+                        selectcolor=ACCENT, activebackground=CARD,
+                        activeforeground=TEXT, relief="flat",
+                        highlightthickness=0, cursor="hand2")
+    cb.pack(anchor="w")
 
-password_label = ttk.Label(main_frame, text="Mot de passe généré", font=('Helvetica', 12))
-password_label.grid(row=6, column=0, sticky='w', pady=(10, 5))
+styled_check(c3, "Majuscules  A – Z", uppercase_var)
+styled_check(c3, "Chiffres      0 – 9", numbers_var)
+styled_check(c3, "Symboles   ! @ # …", special_var)
 
-password_frame = ttk.Frame(main_frame, style='TFrame')
-password_frame.grid(row=7, column=0, columnspan=2, sticky='ew')
 
-password_entry = ttk.Entry(password_frame, font=('Helvetica', 14), width=25)
-password_entry.pack(side='left', fill='x', expand=True, ipady=8)
+c4 = card(outer)
+top2 = tk.Frame(c4, bg=CARD)
+top2.pack(fill="x")
+tk.Label(top2, text="MOT DE PASSE", font=("Courier", 9, "bold"), bg=CARD, fg=MUTED).pack(side="left")
+strength_label = tk.Label(top2, text="", font=("Courier", 9, "bold"), bg=CARD, fg=MUTED)
+strength_label.pack(side="right")
 
-copy_button = ttk.Button(password_frame, text="📋", width=3, command=copy_to_clipboard)
-copy_button.pack(side='right', padx=(5, 0))
+password_var = tk.StringVar()
+password_entry = tk.Entry(c4, textvariable=password_var, font=("Courier", 17, "bold"),
+                          bg=SURFACE, fg=GLOW, insertbackground=ACCENT2,
+                          relief="flat", bd=0, state="normal")
+password_entry.pack(fill="x", pady=(8, 10), ipady=8)
 
-generate_button = ttk.Button(main_frame, text="Générer mot de passe", 
-                           command=generate_password, style='TButton')
-generate_button.grid(row=8, column=0, columnspan=2, pady=(20, 5), sticky='ew')
+bars_frame = tk.Frame(c4, bg=CARD)
+bars_frame.pack(fill="x")
+strength_bars = []
+for _ in range(5):
+    b = tk.Frame(bars_frame, bg=BORDER, height=6, width=80)
+    b.pack(side="left", padx=2)
+    strength_bars.append(b)
 
-status_label = tk.Label(main_frame, text="", font=('Helvetica', 10), bg=BG_COLOR, fg=TEXT_COLOR)
-status_label.grid(row=9, column=0, columnspan=2, pady=(5, 0))
 
-footer_frame = ttk.Frame(window, style='TFrame')
-footer_frame.pack(side='bottom', pady=(0, 20))
+btn_row = tk.Frame(outer, bg=BG)
+btn_row.pack(fill="x", pady=(4, 0))
 
-footer_label = ttk.Label(footer_frame, text="© 2025 Gen Password - Tous droits réservés", 
-                        font=('Helvetica', 9), foreground=SECONDARY_COLOR)
-footer_label.pack()
+gen_btn = tk.Button(btn_row, text="⚡  Générer", font=("Courier", 15, "bold"),
+                    bg=ACCENT, fg=WHITE, relief="flat", cursor="hand2",
+                    activebackground=ACCENT2, activeforeground=WHITE,
+                    command=generate_password, pady=12)
+gen_btn.pack(side="left", fill="x", expand=True, padx=(0, 8))
+
+copy_btn = tk.Button(btn_row, text="📋", font=("Courier", 15),
+                     bg=CARD, fg=TEXT, relief="flat", cursor="hand2",
+                     activebackground=BORDER, activeforeground=WHITE,
+                     command=copy_password, pady=12, width=4,
+                     highlightbackground=BORDER, highlightthickness=1)
+copy_btn.pack(side="right")
+
+
+status_label = tk.Label(outer, text="", font=("Courier", 10),()
+                        bg=BG, fg=SUCCESS)
+status_label.pack(pady=(10, 0))
+
+
+footer = tk.Frame(outer, bg=BG)
+footer.pack(side="bottom", fill="x", pady=(16, 0))
+tk.Frame(footer, bg=BORDER, height=1).pack(fill="x", pady=(0, 10))
+tk.Label(footer, text="© 2025 Gen Password  —  Tous droits réservés",
+         font=("Courier", 8), bg=BG, fg=MUTED).pack()
+
 
 window.mainloop()
