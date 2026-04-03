@@ -237,7 +237,7 @@ copy_btn = tk.Button(btn_row, text="📋", font=("Courier", 15),
 copy_btn.pack(side="right")
 
 
-status_label = tk.Label(outer, text="", font=("Courier", 10),()
+status_label = tk.Label(outer, text="", font=("Courier", 10),
                         bg=BG, fg=SUCCESS)
 status_label.pack(pady=(10, 0))
 
